@@ -22,28 +22,59 @@ def create_access_token(data: dict):
     return encoded_jwt
 
 @router.post("/register")
-def register_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    hashed_password = pwd_context.hash(form_data.password)
-    user = User(username=form_data.username, hashed_password=hashed_password)
-    db.add(user)
+async def register_user(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     try:
+        # Check if username already exists
+        existing_user = db.query(User).filter(User.username == form_data.username).first()
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already registered"
+            )
+
+        # Create new user
+        hashed_password = pwd_context.hash(form_data.password)
+        user = User(
+            username=form_data.username,
+            hashed_password=hashed_password
+        )
+        db.add(user)
         db.commit()
         db.refresh(user)
-        return {"message": "User created successfully"}
-    except:
+
+        # Create access token
+        access_token = create_access_token(data={"sub": user.username})
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "message": "User registered successfully"
+        }
+    except Exception as e:
         db.rollback()
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
         )
 
 @router.post("/token")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == form_data.username).first()
-    if not user or not pwd_context.verify(form_data.password, user.hashed_password):
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter(User.username == form_data.username).first()
+        if not user or not pwd_context.verify(form_data.password, user.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        access_token = create_access_token(data={"sub": user.username})
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "username": user.username
+        }
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
         )
-    access_token = create_access_token(data={"sub": user.username})
-    return {"access_token": access_token, "token_type": "bearer"}

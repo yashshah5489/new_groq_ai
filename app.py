@@ -59,6 +59,7 @@ if 'username' not in st.session_state:
 API_URL = "http://localhost:8000/api"
 
 def login(username: str, password: str):
+    """Authenticate user and store session data"""
     try:
         response = requests.post(
             f"{API_URL}/auth/token",
@@ -67,12 +68,31 @@ def login(username: str, password: str):
         if response.status_code == 200:
             data = response.json()
             st.session_state.authenticated = True
-            st.session_state.username = username
+            st.session_state.username = data["username"]
             st.session_state.token = data["access_token"]
             return True
         return False
     except Exception as e:
         st.error(f"Login failed: {str(e)}")
+        return False
+
+def register(username: str, password: str):
+    """Register a new user"""
+    try:
+        response = requests.post(
+            f"{API_URL}/auth/register",
+            data={"username": username, "password": password}
+        )
+        if response.status_code == 200:
+            data = response.json()
+            st.success("Registration successful! Please login.")
+            return True
+        else:
+            error_detail = response.json().get("detail", "Registration failed")
+            st.error(error_detail)
+            return False
+    except Exception as e:
+        st.error(f"Registration failed: {str(e)}")
         return False
 
 def main():
@@ -92,35 +112,37 @@ def main():
         if not st.session_state.authenticated:
             st.markdown("### Welcome! 👋")
             st.markdown("Please login to access the analyzer.")
-            with st.form("login_form"):
-                username = st.text_input("Username")
-                password = st.text_input("Password", type="password")
-                submitted = st.form_submit_button("Login")
-                if submitted:
-                    if login(username, password):
-                        st.success("Logged in successfully!")
-                        st.rerun()
-                    else:
-                        st.error("Invalid credentials")
-            if st.button("Register New Account"):
-                try:
-                    response = requests.post(
-                        f"{API_URL}/auth/register",
-                        data={"username": username, "password": password}
-                    )
-                    if response.status_code == 200:
-                        st.success("Registration successful! Please login.")
-                    else:
-                        st.error("Registration failed")
-                except Exception as e:
-                    st.error(f"Registration failed: {str(e)}")
-            return
 
-        st.success(f"Welcome back, {st.session_state.username}! 👋")
-        if st.button("Logout", key="logout"):
-            st.session_state.authenticated = False
-            st.session_state.username = None
-            st.rerun()
+            tab1, tab2 = st.tabs(["Login", "Register"])
+
+            with tab1:
+                with st.form("login_form"):
+                    username = st.text_input("Username")
+                    password = st.text_input("Password", type="password")
+                    submitted = st.form_submit_button("Login")
+                    if submitted:
+                        if login(username, password):
+                            st.success("Logged in successfully!")
+                            st.rerun()
+
+            with tab2:
+                with st.form("register_form"):
+                    new_username = st.text_input("Choose Username")
+                    new_password = st.text_input("Choose Password", type="password")
+                    confirm_password = st.text_input("Confirm Password", type="password")
+                    register_submitted = st.form_submit_button("Register")
+                    if register_submitted:
+                        if new_password != confirm_password:
+                            st.error("Passwords do not match!")
+                        else:
+                            register(new_username, new_password)
+
+        else:
+            st.success(f"Welcome back, {st.session_state.username}! 👋")
+            if st.button("Logout", key="logout"):
+                st.session_state.authenticated = False
+                st.session_state.username = None
+                st.rerun()
 
     # Main content
     if st.session_state.authenticated:
