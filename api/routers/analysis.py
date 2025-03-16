@@ -17,11 +17,19 @@ class AnalysisRequest(BaseModel):
     domain_details: Optional[str] = None
     domain_type: Optional[str] = None
 
-@router.post("/analyze")
-async def analyze(request: AnalysisRequest, db: Session = Depends(get_db)):
+from fastapi import Cache
+
+@router.post("/analyze", response_model=dict)
+async def analyze(request: AnalysisRequest, db: Session = Depends(get_db), cache: Cache = Depends()):
+
     try:
         # Get latest news for context
-        news_context = fetch_latest_news(query=request.user_input)
+        cache_key = f"news_context:{request.user_input}"
+        news_context = cache.get(cache_key)
+        if news_context is None:
+            news_context = fetch_latest_news(query=request.user_input)
+            cache.set(cache_key, news_context, expire=3600)  # Cache for 1 hour
+
 
         # Combine context
         full_context = f"{news_context}\n\n{request.context}" if request.context else news_context

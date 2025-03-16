@@ -33,7 +33,8 @@ class Strategy(StrategyBase):
     class Config:
         from_attributes = True
 
-@router.post("/", response_model=Strategy)
+@router.post("/", response_model=Strategy, status_code=status.HTTP_201_CREATED)
+
 async def create_strategy(strategy: StrategyCreate, db: Session = Depends(get_db)):
     try:
         # Validate strategy with AI
@@ -54,7 +55,15 @@ async def create_strategy(strategy: StrategyCreate, db: Session = Depends(get_db
             detail=str(e)
         )
 
-@router.get("/", response_model=List[Strategy])
+@router.delete("/{strategy_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_strategy(strategy_id: int, db: Session = Depends(get_db)):
+    db_strategy = db.query(InvestmentStrategy).filter(InvestmentStrategy.id == strategy_id).first()
+    if not db_strategy:
+        raise HTTPException(status_code=404, detail="Strategy not found")
+    
+    db.delete(db_strategy)
+    db.commit()
+
 async def get_strategies(
     skip: int = 0,
     limit: int = 10,
@@ -63,7 +72,11 @@ async def get_strategies(
     strategies = db.query(InvestmentStrategy).offset(skip).limit(limit).all()
     return strategies
 
-@router.get("/{strategy_id}", response_model=Strategy)
+@router.get("/user/{user_id}", response_model=List[Strategy])
+async def get_strategies_by_user(user_id: int, db: Session = Depends(get_db)):
+    strategies = db.query(InvestmentStrategy).filter(InvestmentStrategy.user_id == user_id).all()
+    return strategies
+
 async def get_strategy(strategy_id: int, db: Session = Depends(get_db)):
     strategy = db.query(InvestmentStrategy).filter(InvestmentStrategy.id == strategy_id).first()
     if not strategy:

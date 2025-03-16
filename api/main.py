@@ -8,6 +8,7 @@ from passlib.context import CryptContext
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/token")
 from api.routers import auth, analysis, strategies
+# C:\Users\yashs\Desktop\new_groq_ai\api\routers\analysis.py
 from database.database import engine
 from database.models import Base
 from dotenv import load_dotenv
