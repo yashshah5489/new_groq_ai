@@ -16,35 +16,101 @@ st.set_page_config(
 # Custom CSS for better styling
 st.markdown("""
 <style>
+    /* Main container styling */
     .main {
-        background-color: #0E1117;
+        background: linear-gradient(135deg, #0E1117 0%, #1A1C24 100%);
+        padding: 2rem;
     }
+
+    /* Card styling */
+    div[data-testid="stVerticalBlock"] > div {
+        background: linear-gradient(135deg, #262730 0%, #1E1E1E 100%);
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Button styling */
     .stButton>button {
         width: 100%;
-        border-radius: 5px;
+        border-radius: 8px;
         height: 3em;
-        background-color: #FF4B4B;
+        background: linear-gradient(135deg, #FF4B4B 0%, #9F2B68 100%);
         color: white;
         border: none;
         font-weight: bold;
+        transition: all 0.3s ease;
     }
-    .stTextInput>div>div>input {
-        background-color: #262730;
+
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 75, 75, 0.3);
+    }
+
+    /* Input field styling */
+    .stTextInput>div>div>input, .stTextArea>div>div>textarea {
+        background-color: #1E1E1E;
         color: white;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 0.5rem;
     }
-    .stTextArea>div>div>textarea {
-        background-color: #262730;
-        color: white;
-    }
+
+    /* Selectbox styling */
     .stSelectbox>div>div>div {
-        background-color: #262730;
+        background-color: #1E1E1E;
         color: white;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
     }
+
+    /* Metric styling */
+    [data-testid="stMetricValue"] {
+        background: linear-gradient(135deg, #FF4B4B 0%, #9F2B68 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: bold;
+    }
+
+    /* Tab styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: #1E1E1E;
+        padding: 0.5rem;
+        border-radius: 8px;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        height: 3rem;
+        background-color: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: white;
+        transition: all 0.3s ease;
+    }
+
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #FF4B4B 0%, #9F2B68 100%);
+        border: none;
+    }
+
+    /* Container spacing */
     div.block-container {
         padding-top: 2rem;
     }
+
     div.element-container {
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Custom heading styles */
+    h1, h2, h3 {
+        background: linear-gradient(135deg, #FF4B4B 0%, #9F2B68 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: bold;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -76,47 +142,86 @@ def login(username: str, password: str):
         return False
 
 def main():
-    # Sidebar with gradient background
+    # Sidebar with modern design
     with st.sidebar:
         st.markdown("""
-            <div style='background: linear-gradient(45deg, #FF4B4B, #9F2B68);
-                        padding: 2rem 1rem;
-                        border-radius: 10px;
-                        margin-bottom: 2rem;'>
-                <h1 style='color: white; text-align: center; margin: 0;'>
+            <div style='
+                background: linear-gradient(135deg, #FF4B4B 0%, #9F2B68 100%);
+                padding: 2rem;
+                border-radius: 16px;
+                margin-bottom: 2rem;
+                box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+                text-align: center;
+            '>
+                <h1 style='
+                    color: white;
+                    margin: 0;
+                    font-size: 2rem;
+                    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+                '>
                     📈 Smart Finance
                 </h1>
+                <p style='
+                    color: rgba(255,255,255,0.9);
+                    margin-top: 0.5rem;
+                    font-size: 1rem;
+                '>
+                    Your AI Financial Assistant
+                </p>
             </div>
         """, unsafe_allow_html=True)
 
         if not st.session_state.authenticated:
-            st.markdown("### Welcome! 👋")
-            st.markdown("Please login to access the analyzer.")
-            with st.form("login_form"):
-                username = st.text_input("Username")
-                password = st.text_input("Password", type="password")
-                submitted = st.form_submit_button("Login")
+            st.markdown("""
+                <div style='text-align: center; margin-bottom: 2rem;'>
+                    <h3 style='color: #FF4B4B;'>Welcome! 👋</h3>
+                    <p style='color: #FAFAFA;'>Please login to access the analyzer.</p>
+                </div>
+            """, unsafe_allow_html=True)
+
+            with st.form("login_form", clear_on_submit=True):
+                username = st.text_input("Username", placeholder="Enter your username")
+                password = st.text_input("Password", type="password", placeholder="Enter your password")
+                col1, col2 = st.columns(2)
+                with col1:
+                    submitted = st.form_submit_button("Login")
+                with col2:
+                    register = st.form_submit_button("Register")
+
                 if submitted:
                     if login(username, password):
                         st.success("Logged in successfully!")
                         st.rerun()
                     else:
                         st.error("Invalid credentials")
-            if st.button("Register New Account"):
-                try:
-                    response = requests.post(
-                        f"{API_URL}/auth/register",
-                        data={"username": username, "password": password}
-                    )
-                    if response.status_code == 200:
-                        st.success("Registration successful! Please login.")
-                    else:
-                        st.error("Registration failed")
-                except Exception as e:
-                    st.error(f"Registration failed: {str(e)}")
+                elif register:
+                    try:
+                        response = requests.post(
+                            f"{API_URL}/auth/register",
+                            data={"username": username, "password": password}
+                        )
+                        if response.status_code == 200:
+                            st.success("Registration successful! Please login.")
+                        else:
+                            st.error("Registration failed")
+                    except Exception as e:
+                        st.error(f"Registration failed: {str(e)}")
             return
 
-        st.success(f"Welcome back, {st.session_state.username}! 👋")
+        # Logged in user info
+        st.markdown(f"""
+            <div style='
+                background: linear-gradient(135deg, #262730 0%, #1E1E1E 100%);
+                padding: 1.5rem;
+                border-radius: 12px;
+                margin-bottom: 2rem;
+                border: 1px solid rgba(255,255,255,0.1);
+            '>
+                <h4 style='color: #FF4B4B; margin: 0;'>Welcome back!</h4>
+                <p style='color: #FAFAFA; margin: 0.5rem 0;'>👤 {st.session_state.username}</p>
+            </div>
+        """, unsafe_allow_html=True)
+
         if st.button("Logout", key="logout"):
             st.session_state.authenticated = False
             st.session_state.username = None
@@ -125,27 +230,46 @@ def main():
     # Main content
     if st.session_state.authenticated:
         st.title("Smart Financial Analyzer")
+
+        # Welcome card with stats
         st.markdown("""
-            <div style='background: linear-gradient(45deg, #262730, #1E1E1E);
-                        padding: 1rem;
-                        border-radius: 10px;
-                        margin-bottom: 2rem;'>
-                <p style='color: #FAFAFA; margin: 0;'>
-                    Get AI-powered financial insights, portfolio analysis, and market trends.
+            <div style='
+                background: linear-gradient(135deg, #262730 0%, #1E1E1E 100%);
+                padding: 2rem;
+                border-radius: 16px;
+                margin-bottom: 2rem;
+                border: 1px solid rgba(255,255,255,0.1);
+                box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            '>
+                <h2 style='color: #FF4B4B; margin: 0;'>Welcome to Your Financial Dashboard</h2>
+                <p style='color: #FAFAFA; margin: 1rem 0;'>
+                    Get AI-powered insights, real-time market analysis, and personalized recommendations.
                 </p>
             </div>
         """, unsafe_allow_html=True)
 
+        # Main tabs with icons
         tabs = st.tabs(["📊 Analysis", "💹 Stocks", "📂 Portfolio"])
 
         with tabs[0]:
             st.header("Financial Analysis")
+
+            # Query input card
+            st.markdown("""
+                <div style='margin-bottom: 1rem;'>
+                    <p style='color: #FAFAFA;'>
+                        Ask anything about finance, investments, or market trends.
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
+
             query = st.text_area(
                 "What would you like to know?",
                 placeholder="e.g., What are the best investment strategies for a recession?",
                 height=100
             )
 
+            # Analysis options
             col1, col2 = st.columns(2)
             with col1:
                 include_news = st.checkbox("Include latest news", value=True)
@@ -167,10 +291,14 @@ def main():
                         if response.status_code == 200:
                             result = response.json()["result"]
                             st.markdown(
-                                f"""<div style='background: #262730; 
-                                            padding: 1.5rem; 
-                                            border-radius: 10px;
-                                            border-left: 5px solid #FF4B4B;'>
+                                f"""<div style='
+                                    background: linear-gradient(135deg, #262730 0%, #1E1E1E 100%);
+                                    padding: 2rem;
+                                    border-radius: 12px;
+                                    border-left: 5px solid #FF4B4B;
+                                    margin-top: 1rem;
+                                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                                '>
                                     {result}
                                 </div>""",
                                 unsafe_allow_html=True
@@ -182,6 +310,8 @@ def main():
 
         with tabs[1]:
             st.header("Stock Analysis")
+
+            # Stock input section
             col1, col2 = st.columns([3, 1])
             with col1:
                 symbol = st.text_input("Enter stock symbol:", placeholder="e.g., AAPL")
@@ -196,6 +326,7 @@ def main():
                             data = response.json()
                             df = pd.DataFrame(data["data"])
 
+                            # Candlestick chart
                             fig = go.Figure(data=[go.Candlestick(
                                 x=df.index,
                                 open=df['1. open'],
@@ -210,27 +341,44 @@ def main():
                                 template="plotly_dark",
                                 plot_bgcolor='rgba(0,0,0,0)',
                                 paper_bgcolor='rgba(0,0,0,0)',
-                                xaxis_rangeslider_visible=False
+                                xaxis_rangeslider_visible=False,
+                                margin=dict(t=100, b=50),
+                                height=500
                             )
 
                             st.plotly_chart(fig, use_container_width=True)
 
-                            # Show key statistics
+                            # Key statistics in a modern card
                             st.markdown("### Key Statistics")
                             stats_cols = st.columns(4)
-                            with stats_cols[0]:
-                                st.metric("Open", f"${df['1. open'].iloc[-1]:.2f}")
-                            with stats_cols[1]:
-                                st.metric("Close", f"${df['4. close'].iloc[-1]:.2f}")
-                            with stats_cols[2]:
-                                st.metric("High", f"${df['2. high'].iloc[-1]:.2f}")
-                            with stats_cols[3]:
-                                st.metric("Low", f"${df['3. low'].iloc[-1]:.2f}")
+                            metrics = [
+                                ("Open", df['1. open'].iloc[-1]),
+                                ("Close", df['4. close'].iloc[-1]),
+                                ("High", df['2. high'].iloc[-1]),
+                                ("Low", df['3. low'].iloc[-1])
+                            ]
+
+                            for col, (label, value) in zip(stats_cols, metrics):
+                                with col:
+                                    st.metric(
+                                        label,
+                                        f"${value:.2f}",
+                                        delta=f"{((value - df['1. open'].iloc[0]) / df['1. open'].iloc[0] * 100):.2f}%"
+                                    )
                     except Exception as e:
                         st.error(f"Error: {str(e)}")
 
         with tabs[2]:
             st.header("Portfolio Analysis")
+
+            # Portfolio input card
+            st.markdown("""
+                <div style='margin-bottom: 1rem;'>
+                    <p style='color: #FAFAFA;'>
+                        Enter your portfolio details and get personalized analysis.
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
 
             portfolio = st.text_area(
                 "Enter your portfolio details:",
@@ -258,10 +406,14 @@ def main():
                         if response.status_code == 200:
                             result = response.json()["result"]
                             st.markdown(
-                                f"""<div style='background: #262730; 
-                                            padding: 1.5rem; 
-                                            border-radius: 10px;
-                                            border-left: 5px solid #FF4B4B;'>
+                                f"""<div style='
+                                    background: linear-gradient(135deg, #262730 0%, #1E1E1E 100%);
+                                    padding: 2rem;
+                                    border-radius: 12px;
+                                    border-left: 5px solid #FF4B4B;
+                                    margin-top: 1rem;
+                                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                                '>
                                     {result}
                                 </div>""",
                                 unsafe_allow_html=True
@@ -270,6 +422,23 @@ def main():
                             st.error("Portfolio analysis failed")
                     except Exception as e:
                         st.error(f"Analysis failed: {str(e)}")
+
+        # Footer
+        st.markdown("""
+            <div style='
+                text-align: center;
+                padding: 2rem;
+                color: rgba(255,255,255,0.6);
+                font-size: 0.8rem;
+                margin-top: 2rem;
+            '>
+                <p>Smart Finance Analyzer | Built with 💜 using Streamlit</p>
+                <p style='font-size: 0.7rem;'>
+                    Disclaimer: This tool provides informational guidance only, not financial advice.
+                    Consult with a certified financial advisor before making investment decisions.
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
