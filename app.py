@@ -61,9 +61,13 @@ API_URL = "http://0.0.0.0:8000/api"
 def login(username: str, password: str):
     """Authenticate user and store session data"""
     try:
+        st.session_state.authenticated = False
+        st.session_state.username = None
+
         response = requests.post(
             f"{API_URL}/auth/token",
-            data={"username": username, "password": password}
+            data={"username": username, "password": password},
+            timeout=5  # Add timeout to prevent hanging
         )
         if response.status_code == 200:
             data = response.json()
@@ -71,6 +75,9 @@ def login(username: str, password: str):
             st.session_state.username = data["username"]
             st.session_state.token = data["access_token"]
             return True
+        return False
+    except requests.exceptions.ConnectionError:
+        st.error("Unable to connect to the authentication server. Please try again.")
         return False
     except Exception as e:
         st.error(f"Login failed: {str(e)}")
@@ -81,7 +88,8 @@ def register(username: str, password: str):
     try:
         response = requests.post(
             f"{API_URL}/auth/register",
-            data={"username": username, "password": password}
+            data={"username": username, "password": password},
+            timeout=5  # Add timeout to prevent hanging
         )
         if response.status_code == 200:
             data = response.json()
@@ -91,6 +99,9 @@ def register(username: str, password: str):
             error_detail = response.json().get("detail", "Registration failed")
             st.error(error_detail)
             return False
+    except requests.exceptions.ConnectionError:
+        st.error("Unable to connect to the authentication server. Please try again.")
+        return False
     except Exception as e:
         st.error(f"Registration failed: {str(e)}")
         return False

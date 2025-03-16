@@ -50,7 +50,7 @@ task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "uvicorn api.main:app --host 0.0.0.0 --port 8000"
+args = "uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload"
 
 [[ports]]
 localPort = 5000
