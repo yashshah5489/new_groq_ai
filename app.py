@@ -55,19 +55,45 @@ if 'authenticated' not in st.session_state:
 if 'username' not in st.session_state:
     st.session_state.username = None
 
-# API endpoints
-API_URL = "http://0.0.0.0:8000/api"
+# Configure API URL for Replit environment
+def get_api_url():
+    """Get the correct API URL based on the environment"""
+    base_url = "http://0.0.0.0:8000"
+    return f"{base_url}/api"
+
+API_URL = get_api_url()
+
+def make_api_request(method, endpoint, data=None, json=None, timeout=5):
+    """Make an API request with proper error handling"""
+    try:
+        url = f"{API_URL}/{endpoint}"
+        kwargs = {
+            'timeout': timeout,
+            'headers': {'Content-Type': 'application/x-www-form-urlencoded'}
+        }
+        if data:
+            kwargs['data'] = data
+        if json:
+            kwargs['json'] = json
+            kwargs['headers'] = {'Content-Type': 'application/json'}
+
+        response = getattr(requests, method)(url, **kwargs)
+        response.raise_for_status()
+        return response
+    except requests.exceptions.ConnectionError:
+        st.error(f"Connection Error: Unable to connect to {url}")
+        return None
+    except requests.exceptions.RequestException as e:
+        st.error(f"Request failed: {str(e)}")
+        return None
 
 def login(username: str, password: str):
     """Authenticate user and store session data"""
     try:
-        st.session_state.authenticated = False
-        st.session_state.username = None
-
         response = requests.post(
             f"{API_URL}/auth/token",
             data={"username": username, "password": password},
-            timeout=5  # Add timeout to prevent hanging
+            timeout=5
         )
         if response.status_code == 200:
             data = response.json()
@@ -89,7 +115,7 @@ def register(username: str, password: str):
         response = requests.post(
             f"{API_URL}/auth/register",
             data={"username": username, "password": password},
-            timeout=5  # Add timeout to prevent hanging
+            timeout=5
         )
         if response.status_code == 200:
             data = response.json()
@@ -105,6 +131,29 @@ def register(username: str, password: str):
     except Exception as e:
         st.error(f"Registration failed: {str(e)}")
         return False
+
+def create_strategy(strategy_data):
+    """Create a new investment strategy"""
+    try:
+        response = make_api_request('post', 'strategies', json=strategy_data)
+        if response and response.status_code == 200:
+            st.success("Strategy created successfully!")
+            return True
+        return False
+    except Exception as e:
+        st.error(f"Failed to create strategy: {str(e)}")
+        return False
+
+def get_strategies():
+    """Get list of investment strategies"""
+    try:
+        response = make_api_request('get', 'strategies')
+        if response and response.status_code == 200:
+            return response.json()
+        return []
+    except Exception as e:
+        st.error(f"Failed to fetch strategies: {str(e)}")
+        return []
 
 def main():
     # Sidebar with gradient background
@@ -147,7 +196,6 @@ def main():
                             st.error("Passwords do not match!")
                         else:
                             register(new_username, new_password)
-
         else:
             st.success(f"Welcome back, {st.session_state.username}! 👋")
             if st.button("Logout", key="logout"):
@@ -169,7 +217,7 @@ def main():
             </div>
         """, unsafe_allow_html=True)
 
-        tabs = st.tabs(["📊 Analysis", "💹 Stocks", "📂 Portfolio"])
+        tabs = st.tabs(["📊 Analysis", "💹 Stocks", "📂 Portfolio", "🎯 Investment Strategies"])
 
         with tabs[0]:
             st.header("Financial Analysis")
@@ -188,8 +236,9 @@ def main():
             if st.button("Analyze", use_container_width=True):
                 with st.spinner("Analyzing your query..."):
                     try:
-                        response = requests.post(
-                            f"{API_URL}/analysis/analyze",
+                        response = make_api_request(
+                            'post',
+                            'analysis/analyze',
                             json={
                                 "query_type": "generic",
                                 "user_input": query,
@@ -197,7 +246,7 @@ def main():
                                 "include_books": include_books
                             }
                         )
-                        if response.status_code == 200:
+                        if response and response.status_code == 200:
                             result = response.json()["result"]
                             st.markdown(
                                 f"""<div style='background: #262730; 
@@ -224,8 +273,8 @@ def main():
             if symbol:
                 with st.spinner("Fetching stock data..."):
                     try:
-                        response = requests.get(f"{API_URL}/analysis/stock/{symbol}")
-                        if response.status_code == 200:
+                        response = make_api_request('get', f'analysis/stock/{symbol}')
+                        if response and response.status_code == 200:
                             data = response.json()
                             df = pd.DataFrame(data["data"])
 
@@ -264,7 +313,6 @@ def main():
 
         with tabs[2]:
             st.header("Portfolio Analysis")
-
             portfolio = st.text_area(
                 "Enter your portfolio details:",
                 placeholder="Example:\nStocks: 40% (AAPL 15%, MSFT 15%, GOOGL 10%)\nBonds: 30%\nCash: 30%",
@@ -280,15 +328,16 @@ def main():
             if st.button("Analyze Portfolio", use_container_width=True):
                 with st.spinner("Analyzing portfolio..."):
                     try:
-                        response = requests.post(
-                            f"{API_URL}/analysis/analyze",
+                        response = make_api_request(
+                            'post',
+                            'analysis/analyze',
                             json={
                                 "query_type": "portfolio",
                                 "user_input": query,
                                 "portfolio_details": portfolio
                             }
                         )
-                        if response.status_code == 200:
+                        if response and response.status_code == 200:
                             result = response.json()["result"]
                             st.markdown(
                                 f"""<div style='background: #262730; 
@@ -303,6 +352,73 @@ def main():
                             st.error("Portfolio analysis failed")
                     except Exception as e:
                         st.error(f"Analysis failed: {str(e)}")
+
+        with tabs[3]:
+            st.header("Custom Investment Strategies")
+
+            tab1, tab2 = st.tabs(["Create Strategy", "View Strategies"])
+
+            with tab1:
+                with st.form("create_strategy_form"):
+                    st.subheader("Create New Strategy")
+
+                    name = st.text_input("Strategy Name", placeholder="e.g., Conservative Growth Portfolio")
+                    description = st.text_area("Strategy Description", 
+                                             placeholder="Describe your investment strategy and goals",
+                                             height=100)
+
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        risk_level = st.selectbox("Risk Level", 
+                                                ["LOW", "MODERATE", "HIGH", "AGGRESSIVE"])
+                        time_horizon = st.number_input("Time Horizon (months)", 
+                                                     min_value=1, value=12)
+
+                    with col2:
+                        target_return = st.number_input("Target Annual Return (%)", 
+                                                      min_value=0.0, value=10.0)
+                        max_drawdown = st.number_input("Maximum Drawdown (%)", 
+                                                     min_value=0.0, value=20.0)
+
+                    investment_criteria = st.text_area("Investment Criteria",
+                                                     placeholder="List your investment criteria and rules",
+                                                     height=100)
+
+                    submitted = st.form_submit_button("Create Strategy")
+                    if submitted:
+                        strategy_data = {
+                            "name": name,
+                            "description": description,
+                            "risk_level": risk_level,
+                            "time_horizon": time_horizon,
+                            "investment_criteria": investment_criteria,
+                            "target_return": target_return,
+                            "max_drawdown": max_drawdown
+                        }
+                        create_strategy(strategy_data)
+
+            with tab2:
+                st.subheader("Your Investment Strategies")
+                strategies = get_strategies()
+
+                if strategies:
+                    for strategy in strategies:
+                        with st.expander(f"{strategy['name']} - {strategy['risk_level']}"):
+                            st.markdown(f"**Description:** {strategy['description']}")
+                            st.markdown(f"**Time Horizon:** {strategy['time_horizon']} months")
+                            st.markdown(f"**Target Return:** {strategy['target_return']}%")
+                            st.markdown(f"**Maximum Drawdown:** {strategy['max_drawdown']}%")
+                            st.markdown(f"**Investment Criteria:**\n{strategy['investment_criteria']}")
+
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                if st.button("Update Strategy", key=f"update_{strategy['id']}"):
+                                    st.session_state.editing_strategy = strategy['id']
+                            with col2:
+                                if st.button("View Performance", key=f"performance_{strategy['id']}"):
+                                    st.write("Performance metrics coming soon...")
+                else:
+                    st.info("No investment strategies found. Create your first strategy!")
 
 if __name__ == "__main__":
     main()

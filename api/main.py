@@ -2,7 +2,7 @@ import os
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import auth, analysis
+from routers import auth, analysis, strategies
 from database.database import engine
 from database.models import Base
 from dotenv import load_dotenv
@@ -28,10 +28,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {"message": "Smart Financial Analyzer API"}
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "message": "API server is running"}
+
 # Include routers
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(analysis.router, prefix="/api/analysis", tags=["analysis"])
+app.include_router(strategies.router, prefix="/api/strategies", tags=["strategies"])
+
+logger.info("FastAPI server initialized and ready to accept connections")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
