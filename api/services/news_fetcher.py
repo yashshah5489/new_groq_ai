@@ -4,7 +4,7 @@ import logging
 from typing import Dict, List, Optional
 from datetime import datetime, timedelta
 import json
-from api.utils.retry import retry_with_backoff, rate_limit
+from ..utils import retry_with_backoff, rate_limit
 from dotenv import load_dotenv
 
 load_dotenv()

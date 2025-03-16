@@ -2,7 +2,7 @@ import os
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import auth, analysis, strategies
+from api.routers import auth, analysis, strategies
 from database.database import engine
 from database.models import Base
 from dotenv import load_dotenv
