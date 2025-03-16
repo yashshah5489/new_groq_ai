@@ -56,7 +56,7 @@ if 'username' not in st.session_state:
     st.session_state.username = None
 
 # API endpoints
-API_URL = "http://localhost:8000/api"
+API_URL = "http://0.0.0.0:8000/api"
 
 def login(username: str, password: str):
     """Authenticate user and store session data"""
